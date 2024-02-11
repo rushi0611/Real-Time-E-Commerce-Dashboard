@@ -1,0 +1,16 @@
+Abstarct:-
+
+This project tackles the challenge of real-time data processing and analysis in a data-driven world.
+It presents a robust E-commerce Analytics Dashboard designed to empower businesses with real-time insights for data-driven decision-making.
+It leverages a powerful tech stack:Apache Kafka, Apache Spark, MongoDB, and Tableau.
+
+The project includes diverse dataset comprising information on real-time data on products, customers, and transactions flow through Kafka, ensuring efficient and scalable data capture.
+Sparks to performs real-time data transformations and analysis, extracting valuable insights from the streaming data.
+MongoDB connects Spark to the Tableau and serves as flexible a NoSQL database, offering efficient storage and retrieval of processed data in JSON-like documents.
+Tableau presents real-time data through interactive dashboards and reports, empowering stakeholders to derive actionable insights.
+
+The project's unique workflow, incorporating Python Faker for generating realistic data, it simulates diverse e-commerce data for accurate analysis.
+Two Kafka broker clusters provide fault tolerance and high availability.
+
+It Enables organizations to unlock the potential of streaming data analytics. It gives instant insights into sales trends, customer behavior, and product performance.
+It facilitates data-driven decision-making in real-time based on comprehensive data analysis.
