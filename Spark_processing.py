@@ -174,7 +174,7 @@ transactionDF = spark.readStream \
     .select("data.*")
 transactionDF = transactionDF.withColumn("processingTime", current_timestamp())
 transactionDF = transactionDF.withWatermark("processingTime", "2 hours")
-
+#
 
 
 

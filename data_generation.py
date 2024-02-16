@@ -20,7 +20,7 @@ customers = []
 products = []
 
 #create connection to mongodb
-
+#
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 
 # connecting to database
