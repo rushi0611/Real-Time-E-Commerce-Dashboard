@@ -1,0 +1,17 @@
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+
+go to cd /etc
+
+-change the port no
+
+sudo gedit mongod.conf
+
+cd
+
+service mongod status
+if inactive
+
+service mongod start
+
+mongosh --host localhost --port portno
