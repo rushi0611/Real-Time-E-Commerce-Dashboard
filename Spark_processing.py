@@ -42,9 +42,6 @@ packages = [
 spark = SparkSession.builder\
    .appName("Ecommerce Data Analysis")\
    .config("spark.jars.packages", ",".join(packages))\
-   .config("spark.es.nodes", "elasticsearch") \
-   .config("spark.es.port", "9200") \
-   .config("spark.es.nodes.wan.only", "true") \
    .getOrCreate()
 
 
@@ -56,7 +53,7 @@ spark.sparkContext.setLogLevel("ERROR")
 
 # Kafka configuration
 kafka_bootstrap_servers ='localhost:9092'
-
+'''
 customerSchema = StructType([
     StructField("customer_id", StringType(), False),
     StructField("name", StringType(), True),
@@ -68,7 +65,7 @@ customerSchema = StructType([
     StructField("last_login", TimestampType(), True)
 ])
 
-
+'''
 '''
 customerDF = (spark.readStream
               .format("kafka")
@@ -153,21 +150,31 @@ productDF = spark.read\
     .withColumn("processingTime", current_timestamp())  # Add processing timestamp
 productDF = productDF.withWatermark("processingTime", "2 hours")
 
+'''
+
+
 # Read data from 'ecommerce_transactions' topic
 transactionSchema = StructType([
     StructField("transaction_id", IntegerType(), True),
     StructField("customer_id", StringType(), True),
     StructField("product_id", StringType(), True),
+    StructField("pname",StringType(),False),
+    StructField("category",StringType(),True),
+    StructField("price",StringType(),True),
+    StructField("supplier",StringType(),True),
     StructField("quantity", IntegerType(), True),
     StructField("date_time", TimestampType(), True),
     StructField("status", StringType(), True),
-    StructField("payment_method", StringType(), True)
+    StructField("payment_method", StringType(), True),
+    StructField("country",StringType(),True),
+    StructField("region",StringType(),True),
 ])
 transactionDF = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", kafka_bootstrap_servers) \
-    .option("subscribe", "ecommerce_transactions") \
+    .option("subscribe", "transactions") \
     .option("startingOffsets", "earliest") \
+    .option("failOnDataLoss", "false") \
     .load() \
     .selectExpr("CAST(value AS STRING)") \
     .select(from_json("value", transactionSchema).alias("data")) \
@@ -177,9 +184,35 @@ transactionDF = transactionDF.withWatermark("processingTime", "2 hours")
 #
 
 
+#transactionDF.writeStream.format("console").outputMode("append").start().awaitTermination()
+
+#writting each batch of stream to mongodb collection
+
+try:
+    # Write data to MongoDB
+    def write_to_mongo(batchDF, batchId):
+        batchDF.write.format("mongo").mode("append").option("uri", connection_uri).option(
+            "collection","transactions").save()
 
 
-'''
+    writeStream = transactionDF \
+        .writeStream \
+        .outputMode("append") \
+        .foreachBatch(write_to_mongo) \
+        .option("checkpointLocation", "/tmp/spark-checkpoint") \
+        .start()
+
+    writeStream.awaitTermination()
+
+except Exception as e:
+    print(f"Error: {e}")
+
+finally:
+    # Stop SparkSession
+    spark.stop()
+
+
+
 '''
 # Read data from 'ecommerce_product_views' topic
 productViewSchema = StructType([
