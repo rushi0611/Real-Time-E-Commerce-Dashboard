@@ -7,6 +7,7 @@ from faker import Faker
 from kafka import KafkaProducer
 import pymongo
 import os
+import sys
 
 #creating an instance of an Faker class
 fake =Faker()
@@ -16,8 +17,6 @@ kafka_broker='localhost:9092'
 producer =KafkaProducer(bootstrap_servers=[kafka_broker],value_serializer=lambda x: json.dumps(x).encode('utf-8'))
 
 # customers and products dataset
-customers = []
-products = []
 
 #create connection to mongodb
 #
@@ -30,11 +29,11 @@ database = client["ecommerce"]
 # connecting to collections
 products_collection = database["products"]
 customers_collection=database["customers"]
-transaction_collection=database["transactions"]
+#transaction_collection=database["transactions"]
 
 
-
-
+#products=[]
+#customers=[]
 #here there is worst case, ask about these to anay sir
 
 #checking if collection contains records, if contains then fetching last documnets's product_id value and then cretaing new documents
@@ -43,12 +42,24 @@ transaction_collection=database["transactions"]
 c=0
 
 try:
-    last_document=products_collection.find().sort({"_id":-1}).limit(1)
-    c=last_document.product_id
+    #print("trying")
+    last_document=customers_collection.find().sort("customer_id", pymongo.DESCENDING).limit(1)
+    for i in last_document:
+        #print(i["customer_id"])
+        c=int(i["customer_id"])
+        #print(c)
+        #sys.exit(0)
+
+    #c=last_document.product_id
+    #print("sucess")
+    #print(c)
 except Exception as e:
+    #print(e)
     c=0
 
 
+
+#sys.exit(0)
 
 
 # Generate Customer Data (it is data of master database i.e it doesn't changes exponentially)
@@ -56,10 +67,11 @@ def generate_customer():
     global c
     c+=1
 
+
     name=fake.name()
     namearr=name.split(' ')
     customer = {
-        "customer_id":'C'+str(c),
+        "customer_id":c,
         "name": name,
         "email": namearr[0]+namearr[1]+str(random.randint(1,1000))+str(random.randint(2,9))+'@gmail.com',
         "location": fake.address(),
@@ -68,7 +80,7 @@ def generate_customer():
         "account_created": fake.past_date().isoformat(),
         "last_login": fake.date_time_this_month(()).isoformat()
     }
-    customers.append(customer["customer_id"])
+    #customers.append(customer["customer_id"])
     #print(customer)
 
 
@@ -76,10 +88,10 @@ def generate_customer():
     try:
         x = customers_collection.insert_one(customer)
         #print(x.inserted_id)
-        print(x.acknowledged)
+        #print(x.acknowledged)
     except Exception as e:
         print(e)
-        exit()
+        #exit()
 
     return customer
 
@@ -91,18 +103,28 @@ def generate_customer():
 p=0
 
 try:
-    last_document=products_collection.find().sort({"_id":-1}).limit(1)
-    p=last_document.product_id
+    last_document=products_collection.find().sort("product_id", pymongo.DESCENDING).limit(1)
+    #print(last_document)
+    for i in last_document:
+        #print(i["product_id"])
+        p=int(i["product_id"])
+        #print(p)
+        #sys.exit(0)
+
 except Exception as e:
+    #print(e)
     p=0
 
 
+
+
+#sys.exit(0)
 def generate_product():
     global p
     p+=1
     categories=['Electronics', 'Books', 'Clothing', 'Home & Garden']
     product={
-        'product_id':'P'+str(p),
+        'product_id':p,
         'name':fake.word().title(),
         'category':random.choice(categories),
         'price':round(random.uniform(10,500),2),
@@ -110,14 +132,14 @@ def generate_product():
         'rating':round(random.uniform(1,5),1)
     }
 
-    products.append(product['product_id'])
+    #products.append(product['product_id'])
     #print(product)
 
     # adding document generated above to collection
     try :
         x = products_collection.insert_one(product)
         #print(x.inserted_id)
-        print(x.acknowledged)
+        #print(x.acknowledged)
     except Exception as e:
         print(e)
         exit()
@@ -130,7 +152,7 @@ def generate_product():
 
 
 
-
+'''
 #generate transaction data
 
 t=0
@@ -162,7 +184,7 @@ def generate_transaction():
 
 
 
-
+'''
 
 
 
@@ -215,15 +237,17 @@ def send_data():
     #producer.send('ecommerce_customers', value=customer)
     product = generate_product()
     #producer.send('ecommerce_products', value=product)
+    #sys.exit(0)
 
 
-
+    '''
     # Higher chance to create transactions and interactions
     if customers and products:
         transaction = generate_transaction()
         print(transaction)
         producer.send('ecommerce_transactions', value=transaction)
-'''
+    '''
+    '''
         product_view = generate_product_view()
         if product_view:
             producer.send('ecommerce_product_views', value=product_view)
@@ -244,12 +268,16 @@ def send_data():
 
 
 
-
+'''
 with ThreadPoolExecutor(max_workers=5) as executor:
     while True:
         executor.submit(send_data)
         time.sleep(random.uniform(0.01, 0.1))
+'''
 
+while True:
+    send_data()
+    time.sleep(2)
 
 
 
