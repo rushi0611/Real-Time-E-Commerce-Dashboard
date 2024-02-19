@@ -91,21 +91,31 @@ sys.exit(0)
 t=0
 
 try:
-    last_transaction=transaction_collection.find().sort("transaction_id", pymongo.DESCENDING).limit(1)
+    print("Trying to fetch last transaction from transaction collection")
+    last_transaction=transaction_collection.find({}).sort("transaction_id", pymongo.DESCENDING).limit(1)
+    if last_transaction.count() != 0 :
+        print("transactions are available in transactions collection")
+        for i in last_transaction:
+            #print(type(i))
+            #print(i)
+            #sys.exit(1)
+            t = int(i["transaction_id"])
+            print("last transaction's transaction_id is :")
+            print(t)
+            #sys.exit(0)
+    else:
+        print("no transactions available in collection")
     '''
     for i in last_transaction:
         print(i["transaction_id"])
     '''
     #j=0
-    for i in last_transaction:
-        t=int(i["transaction_id"])
-        #print(t)
-        #sys.exit(0)
+
         #j+=1
     #print(j)
     #sys.exit(0)
 except Exception as e:
-    #print(e)
+    print(e)
     t=0
 
 
@@ -137,8 +147,8 @@ def generate_transaction():
 
     return {
         "transaction_id": t,
-        "customer_id": customer_id,
-        "product_id": product_id,
+        "customer_id": int(customer_id),
+        "product_id": int(product_id),
         "pname":products_collection.find({"product_id":product_id},{"_id":0,"name":1})[0]["name"],
         "category":products_collection.find({"product_id":product_id},{"category":1,"_id":0})[0]["category"],
         "price":products_collection.find({"product_id":product_id},{"_id":0,"price":1})[0]["price"],
@@ -157,6 +167,6 @@ while True:
 
     transaction=generate_transaction()
     producer.send(topic="transactions",value=transaction)
-    time.sleep(2)
+    time.sleep(5)
 
 
