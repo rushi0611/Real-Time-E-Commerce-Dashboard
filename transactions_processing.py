@@ -173,7 +173,7 @@ transactionDF = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", kafka_bootstrap_servers) \
     .option("subscribe", "transactions") \
-    .option("startingOffsets", "earliest") \
+    .option("startingOffsets", "latest") \
     .option("failOnDataLoss", "false") \
     .load() \
     .selectExpr("CAST(value AS STRING)") \
