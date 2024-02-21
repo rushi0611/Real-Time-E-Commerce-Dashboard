@@ -82,7 +82,7 @@ customerDF = (spark.readStream
 
 '''
 
-connection_uri = "mongodb://localhost:27017/ecommerce"
+connection_uri = "mongodb://192.168.1.14:27017/ecommerce"
 collection_name = "products"
 products_df = spark.read \
   .format("mongo") \
@@ -157,10 +157,10 @@ productDF = productDF.withWatermark("processingTime", "2 hours")
 transactionSchema = StructType([
     StructField("transaction_id", IntegerType(), True),
     StructField("customer_id", StringType(), True),
-    StructField("product_id", StringType(), True),
+    StructField("product_id", IntegerType(), True),
     StructField("pname",StringType(),False),
     StructField("category",StringType(),True),
-    StructField("price",StringType(),True),
+    StructField("price",IntegerType(),True),
     StructField("supplier",StringType(),True),
     StructField("quantity", IntegerType(), True),
     StructField("date_time", TimestampType(), True),
@@ -173,7 +173,7 @@ transactionDF = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", kafka_bootstrap_servers) \
     .option("subscribe", "transactions") \
-    .option("startingOffsets", "earliest") \
+    .option("startingOffsets", "latest") \
     .option("failOnDataLoss", "false") \
     .load() \
     .selectExpr("CAST(value AS STRING)") \
@@ -181,6 +181,7 @@ transactionDF = spark.readStream \
     .select("data.*")
 transactionDF = transactionDF.withColumn("processingTime", current_timestamp())
 transactionDF = transactionDF.withWatermark("processingTime", "2 hours")
+transactionDF.dropna()
 #
 
 
@@ -213,30 +214,12 @@ finally:
 
 
 
-'''
-# Read data from 'ecommerce_product_views' topic
-productViewSchema = StructType([
-    StructField("view_id", StringType(), True),
-    StructField("customer_id", StringType(), True),
-    StructField("product_id", StringType(), True),
-    StructField("timestamp", TimestampType(), True),
-    StructField("view_duration", IntegerType(), True)
-])
-productViewDF = (spark.readStream
-                 .format("kafka")
-                 .option("kafka.bootstrap.servers", kafka_bootstrap_servers)
-                 .option("subscribe", "ecommerce_product_views")
-                 .option("startingOffsets", "earliest")
-                 .load()
-                 .selectExpr("CAST(value AS STRING)")
-                 .select(from_json("value", productViewSchema).alias("data"))
-                 .select("data.*")
-                 .withColumn("timestamp", col("timestamp").cast("timestamp"))
-                 .withWatermark("timestamp", "1 hour")
-                 )
-productViewDF = productViewDF.withColumn("processingTime", current_timestamp())
-productViewDF = productViewDF.withWatermark("processingTime", "2 hours")
 
+# Read data from 'product_views' topic
+
+
+
+'''
 # Read data from 'ecommerce_system_logs' topic
 systemLogSchema = StructType([
     StructField("log_id", StringType(), True),
