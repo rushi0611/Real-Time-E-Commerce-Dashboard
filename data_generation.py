@@ -21,7 +21,7 @@ producer =KafkaProducer(bootstrap_servers=[kafka_broker],value_serializer=lambda
 #create connection to mongodb
 #
 #
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient("mongodb://192.168.1.14:27017/")
 
 # connecting to database
 database = client["ecommerce"]
@@ -71,7 +71,7 @@ def generate_customer():
     name=fake.name()
     namearr=name.split(' ')
     customer = {
-        "customer_id":c,
+        "customer_id":int(c),
         "name": name,
         "email": namearr[0]+namearr[1]+str(random.randint(1,1000))+str(random.randint(2,9))+'@gmail.com',
         "location": fake.address(),
@@ -124,7 +124,7 @@ def generate_product():
     p+=1
     categories=['Electronics', 'Books', 'Clothing', 'Home & Garden']
     product={
-        'product_id':p,
+        'product_id':int(p),
         'name':fake.word().title(),
         'category':random.choice(categories),
         'price':round(random.uniform(10,500),2),
@@ -210,7 +210,7 @@ def generate_system_log():
     return {
         "log_id": fake.uuid4(),
         "timestamp": fake.date_time_this_year().isoformat(),
-        "level": random.choice(log_levels),
+        "level": random.choice(log_levels)
         "message": fake.sentence()
     }
 
