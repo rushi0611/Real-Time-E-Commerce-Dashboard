@@ -23,7 +23,7 @@ producer =KafkaProducer(bootstrap_servers=[kafka_broker],value_serializer=lambda
 #create connection to mongodb
 #
 #
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient("mongodb://192.168.1.14:27017/")
 
 # connecting to database
 database = client["ecommerce"]
@@ -34,6 +34,8 @@ database = client["ecommerce"]
 products_collection = database["products"]
 customers_collection=database["customers"]
 transaction_collection=database["transactions"]
+product_view_collection=database["product_views"]
+
 
 
 
@@ -161,6 +163,14 @@ def generate_transaction():
         "region": region
 
     }
+
+
+
+
+
+
+
+
 
 
 while True:
