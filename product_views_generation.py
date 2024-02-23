@@ -9,6 +9,7 @@ import pymongo
 import os
 import sys
 
+
 #creating an instance of an Faker class
 fake =Faker()
 
@@ -23,7 +24,7 @@ producer =KafkaProducer(bootstrap_servers=[kafka_broker],value_serializer=lambda
 #create connection to mongodb
 #
 #
-client = pymongo.MongoClient("mongodb://192.168.1.14:27017/")
+client = pymongo.MongoClient("mongodb://localhost:27017/")
 
 # connecting to database
 database = client["ecommerce"]
@@ -95,9 +96,23 @@ def generate_product_view():
     }
 
 
+
+cnt=0
+check=random.randint(1000,3000)
 while True:
     product_view=generate_product_view()
     producer.send(topic="product_views",value=product_view)
     time.sleep(5)
+    cnt+=1
+
+    if cnt==check:
+        check = random.randint(50, 100)
+
+        customers_cursor = customers_collection.find({}, {"customer_id": 1, "_id": 0})  # it will return cursor object
+        customers = [i["customer_id"] for i in customers_cursor]
+
+        products_cursor = products_collection.find({}, {"product_id": 1, "_id": 0})  # it will return cursor object
+        products = [i["product_id"] for i in products_cursor]
+
 
 

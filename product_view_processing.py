@@ -54,7 +54,7 @@ spark.sparkContext.setLogLevel("ERROR")
 # Kafka configuration
 kafka_bootstrap_servers ='localhost:9092'
 
-connection_uri = "mongodb://192.168.1.14:27017/ecommerce"
+connection_uri = "mongodb://localhost/ecommerce"
 
 productViewSchema = StructType([
     StructField("view_id", StringType(), True),
@@ -73,6 +73,7 @@ productViewDF = (spark.readStream
                  .option("kafka.bootstrap.servers", kafka_bootstrap_servers)
                  .option("subscribe", "product_views")
                  .option("startingOffsets", "latest")
+                 .option("failOnDataLoss", "false")
                  .load()
                  .selectExpr("CAST(value AS STRING)")
                  .select(from_json("value", productViewSchema).alias("data"))
@@ -84,10 +85,43 @@ productViewDF = productViewDF.withColumn("processingTime", current_timestamp())
 productViewDF = productViewDF.withWatermark("processingTime", "2 hours")
 
 
+
+'''
+# Understanding customer interest in products.
+productViewsAnalysisDF = productViewDF \
+    .withWatermark("timestamp", "2 hours") \
+    .groupBy(
+    window(col("timestamp"), "1 hour"),
+    "product_id"
+) \
+    .agg(
+    count("view_id").alias("total_views"),
+    avg("view_duration").alias("average_view_duration")
+) \
+    .select(
+    col("window.start").alias("window_start"),
+    col("window.end").alias("window_end"),
+    col("product_id"),
+    col("total_views"),
+    col("average_view_duration")
+)
+
+# writting streaming dataframe to console
+
+
+query = productViewsAnalysisDF.writeStream \
+    .outputMode('complete') \
+    .format('console') \
+    .start()
+query.awaitTermination()
+
+
+'''
+
 try:
     # Write data to MongoDB
     def write_to_mongo_pv(batchDF, batchId):
-        print("insude write_to_mongo_pv")
+        #print("inside write_to_mongo_pv")
         batchDF.write.format("mongo").mode("append").option("uri", connection_uri).option(
             "collection","product_views").save()
 
