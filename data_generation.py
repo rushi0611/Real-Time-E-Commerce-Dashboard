@@ -71,14 +71,13 @@ def generate_customer():
     name=fake.name()
     namearr=name.split(' ')
     customer = {
-        "customer_id":c,
+        "customer_id":int(c),
         "name": name,
         "email": namearr[0]+namearr[1]+str(random.randint(1,1000))+str(random.randint(2,9))+'@gmail.com',
         "location": fake.address(),
         "age": random.randint(18, 70),
         "gender": random.choice(["Male", "Female", "Other"]),
         "account_created": fake.past_date().isoformat(),
-        "last_login": fake.date_time_this_month(()).isoformat()
     }
     #customers.append(customer["customer_id"])
     #print(customer)
@@ -124,7 +123,7 @@ def generate_product():
     p+=1
     categories=['Electronics', 'Books', 'Clothing', 'Home & Garden']
     product={
-        'product_id':p,
+        'product_id':int(p),
         'name':fake.word().title(),
         'category':random.choice(categories),
         'price':round(random.uniform(10,500),2),
@@ -210,7 +209,7 @@ def generate_system_log():
     return {
         "log_id": fake.uuid4(),
         "timestamp": fake.date_time_this_year().isoformat(),
-        "level": random.choice(log_levels),
+        "level": random.choice(log_levels)
         "message": fake.sentence()
     }
 

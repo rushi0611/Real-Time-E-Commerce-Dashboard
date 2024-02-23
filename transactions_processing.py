@@ -10,7 +10,6 @@ from pyspark.sql import Row
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
-
 # Initialize Spark Session
 '''
 spark = SparkSession.builder \
@@ -21,7 +20,6 @@ spark = SparkSession.builder \
     .getOrCreate()
 '''
 
-
 '''
 spark = SparkSession \
     .builder \
@@ -29,8 +27,8 @@ spark = SparkSession \
     .getOrCreate()
 
 '''
-#in above two ways of building sparksession object , saprk version version and scala version was incompatible with our code
-#due these reasons we are  installing latest versions of scala and spark
+# in above two ways of building sparksession object , saprk version version and scala version was incompatible with our code
+# due these reasons we are  installing latest versions of scala and spark
 scala_version = '2.12'
 spark_version = '3.1.2'
 # TODO: Ensure match above values match the correct versions
@@ -39,20 +37,15 @@ packages = [
     'org.apache.kafka:kafka-clients:3.2.1',
     'org.mongodb.spark:mongo-spark-connector_2.12:3.0.1'
 ]
-spark = SparkSession.builder\
-   .appName("Ecommerce Data Analysis")\
-   .config("spark.jars.packages", ",".join(packages))\
-   .getOrCreate()
-
-
-
-
-
+spark = SparkSession.builder \
+    .appName("Ecommerce Data Analysis") \
+    .config("spark.jars.packages", ",".join(packages)) \
+    .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
 
 # Kafka configuration
-kafka_bootstrap_servers ='localhost:9092'
+kafka_bootstrap_servers = 'localhost:9092'
 '''
 customerSchema = StructType([
     StructField("customer_id", StringType(), False),
@@ -82,18 +75,15 @@ customerDF = (spark.readStream
 
 '''
 
-connection_uri = "mongodb://localhost:27017/ecommerce"
+connection_uri = "mongodb://localhost/ecommerce"
 collection_name = "products"
 products_df = spark.read \
-  .format("mongo") \
-  .option("uri", connection_uri) \
-  .option("collection", collection_name) \
-  .load()
-
+    .format("mongo") \
+    .option("uri", connection_uri) \
+    .option("collection", collection_name) \
+    .load()
 
 products_df.show(5)
-
-
 
 '''
 
@@ -112,9 +102,8 @@ while True:
     query.awaitTermination()
 '''
 
-
-#writting customerDF dataframe to kafka
-#These is not working, do revisit this code
+# writting customerDF dataframe to kafka
+# These is not working, do revisit this code
 '''
 customerDF.writeStream \
     .format("kafka") \
@@ -152,28 +141,27 @@ productDF = productDF.withWatermark("processingTime", "2 hours")
 
 '''
 
-
 # Read data from 'ecommerce_transactions' topic
 transactionSchema = StructType([
     StructField("transaction_id", IntegerType(), True),
     StructField("customer_id", StringType(), True),
-    StructField("product_id", StringType(), True),
-    StructField("pname",StringType(),False),
-    StructField("category",StringType(),True),
-    StructField("price",StringType(),True),
-    StructField("supplier",StringType(),True),
+    StructField("product_id", IntegerType(), True),
+    StructField("pname", StringType(), False),
+    StructField("category", StringType(), True),
+    StructField("price", IntegerType(), True),
+    StructField("supplier", StringType(), True),
     StructField("quantity", IntegerType(), True),
     StructField("date_time", TimestampType(), True),
     StructField("status", StringType(), True),
     StructField("payment_method", StringType(), True),
-    StructField("country",StringType(),True),
-    StructField("region",StringType(),True),
+    StructField("country", StringType(), True),
+    StructField("region", StringType(), True),
 ])
 transactionDF = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", kafka_bootstrap_servers) \
     .option("subscribe", "transactions") \
-    .option("startingOffsets", "earliest") \
+    .option("startingOffsets", "latest") \
     .option("failOnDataLoss", "false") \
     .load() \
     .selectExpr("CAST(value AS STRING)") \
@@ -181,18 +169,19 @@ transactionDF = spark.readStream \
     .select("data.*")
 transactionDF = transactionDF.withColumn("processingTime", current_timestamp())
 transactionDF = transactionDF.withWatermark("processingTime", "2 hours")
+transactionDF.dropna()
 #
 
 
-#transactionDF.writeStream.format("console").outputMode("append").start().awaitTermination()
+# transactionDF.writeStream.format("console").outputMode("append").start().awaitTermination()
 
-#writting each batch of stream to mongodb collection
+# writting each batch of stream to mongodb collection
 
 try:
     # Write data to MongoDB
     def write_to_mongo(batchDF, batchId):
         batchDF.write.format("mongo").mode("append").option("uri", connection_uri).option(
-            "collection","transactions").save()
+            "collection", "transactions").save()
 
 
     writeStream = transactionDF \
@@ -211,32 +200,10 @@ finally:
     # Stop SparkSession
     spark.stop()
 
+# Read data from 'product_views' topic
 
 
 '''
-# Read data from 'ecommerce_product_views' topic
-productViewSchema = StructType([
-    StructField("view_id", StringType(), True),
-    StructField("customer_id", StringType(), True),
-    StructField("product_id", StringType(), True),
-    StructField("timestamp", TimestampType(), True),
-    StructField("view_duration", IntegerType(), True)
-])
-productViewDF = (spark.readStream
-                 .format("kafka")
-                 .option("kafka.bootstrap.servers", kafka_bootstrap_servers)
-                 .option("subscribe", "ecommerce_product_views")
-                 .option("startingOffsets", "earliest")
-                 .load()
-                 .selectExpr("CAST(value AS STRING)")
-                 .select(from_json("value", productViewSchema).alias("data"))
-                 .select("data.*")
-                 .withColumn("timestamp", col("timestamp").cast("timestamp"))
-                 .withWatermark("timestamp", "1 hour")
-                 )
-productViewDF = productViewDF.withColumn("processingTime", current_timestamp())
-productViewDF = productViewDF.withWatermark("processingTime", "2 hours")
-
 # Read data from 'ecommerce_system_logs' topic
 systemLogSchema = StructType([
     StructField("log_id", StringType(), True),
@@ -291,9 +258,8 @@ query.awaitTermination()
 
 '''
 '''
-
 # This analysis  focus on demographics and account activity.
-customerAnalysisDF = (customerDF
+customerAnalysisDF = (transactionDF
 .groupBy(
     window(col("last_login"), "1 day"),  # Windowing based on last_login
     "gender"
@@ -314,9 +280,9 @@ query=customerAnalysisDF.writeStream \
     .start()
 query.awaitTermination()
 
-'''
-'''
 
+'''
+'''
 # Analyzing product popularity and stock status with windowing
 productAnalysisDF = productDF \
     .groupBy(
@@ -347,9 +313,9 @@ query=productAnalysisDF.writeStream \
 query.awaitTermination()
 
 '''
-'''
 
 # Analyzing sales data
+'''
 salesAnalysisDF = transactionDF \
     .groupBy(
     window(col("processingTime"), "1 hour"),  # Window based on processingTime
@@ -369,8 +335,6 @@ salesAnalysisDF = transactionDF \
     col("unique_customers")
 )
 
-
-
 '''
 
 
@@ -378,17 +342,14 @@ salesAnalysisDF = transactionDF \
 
 '''
 
-query=salesAnalysisDF.writeStream \
+query = salesAnalysisDF.writeStream \
     .outputMode('complete') \
     .format('console') \
     .start()
 query.awaitTermination()
 
 '''
-
-
 '''
-
 # Understanding customer interest in products.
 productViewsAnalysisDF = productViewDF \
     .withWatermark("timestamp", "2 hours") \
@@ -411,16 +372,15 @@ productViewsAnalysisDF = productViewDF \
 
 #writting streaming dataframe to console
 
-'''
-''' 
-qquery=productViewsAnalysisDF.writeStream \
+ 
+query=productViewsAnalysisDF.writeStream \
     .outputMode('complete') \
     .format('console') \
     .start()
 query.awaitTermination()
 
-'''
 
+'''
 '''
 # User Interaction Analysis
 interactionAnalysisDF = userInteractionDF \
@@ -453,7 +413,7 @@ query.awaitTermination()
 
 '''
 
-#This code of writting streaming dataframe to kafka topic
+# This code of writting streaming dataframe to kafka topic
 # is not working see these code later
 '''
 interactionAnalysisDF.writeStream \
@@ -465,8 +425,6 @@ interactionAnalysisDF.writeStream \
     .start() \
     .awaitTermination()
 '''
-
-
 
 '''
 def writeToElasticsearch(df, index_name):
@@ -509,5 +467,3 @@ logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 '''
-
-
