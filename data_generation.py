@@ -21,7 +21,7 @@ producer =KafkaProducer(bootstrap_servers=[kafka_broker],value_serializer=lambda
 #create connection to mongodb
 #
 #
-client = pymongo.MongoClient("mongodb://192.168.1.14:27017/")
+client = pymongo.MongoClient("mongodb://localhost:27017/")
 
 # connecting to database
 database = client["ecommerce"]
@@ -78,7 +78,6 @@ def generate_customer():
         "age": random.randint(18, 70),
         "gender": random.choice(["Male", "Female", "Other"]),
         "account_created": fake.past_date().isoformat(),
-        "last_login": fake.date_time_this_month(()).isoformat()
     }
     #customers.append(customer["customer_id"])
     #print(customer)
