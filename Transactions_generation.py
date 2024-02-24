@@ -1,3 +1,4 @@
+
 import json
 import random
 import time
@@ -8,8 +9,8 @@ from kafka import KafkaProducer
 import pymongo
 import os
 import sys
-import data_generation
 
+print("starting")
 #creating an instance of an Faker class
 fake =Faker()
 
@@ -17,20 +18,16 @@ fake =Faker()
 kafka_broker='localhost:9092'
 producer =KafkaProducer(bootstrap_servers=[kafka_broker],value_serializer=lambda x: json.dumps(x).encode('utf-8'))
 
-# customers and products dataset
-#customers = []
-#products = []
+
 
 #create connection to mongodb
-#
-#
 
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient("mongodb://192.168.1.13:27017/")
 
 # connecting to database
 database = client["ecommerce"]
 
-
+#print(database)
 
 # connecting to collections
 products_collection = database["products"]
@@ -46,13 +43,7 @@ product_view_collection=database["product_views"]
 customers_cursor = customers_collection.find({},{"customer_id":1,"_id":0})  # it will return cursor object
 #print(customers_cursor)
 
-'''
-for i in customers_cursor:
-    print(type(i))
-    print(i["customer_id"])
-    break
-    
-'''
+
 
 customers=[i["customer_id"] for i in customers_cursor]
 #print(customers)
@@ -64,38 +55,17 @@ customers=[i["customer_id"] for i in customers_cursor]
 products_cursor = products_collection.find({},{"product_id":1,"_id":0})  # it will return cursor object
 #print(products_cursor)
 
-'''
-for i in products_cursor:
-    print(type(i))
-    print(i["product_id"])
-    break
-'''
+
 
 products=[i["product_id"] for i in products_cursor]
 #print(products)
 
 
-'''
-products_cursor1=products_collection.find({"product_id":"P1"},{"category":1,"_id":0})
-
-print(products_cursor1[0]["category"])
-
-
-sys.exit(0)
-'''
-
-
-
-
-
-
-
-
-
 t=0
 
 try:
-    print("Trying to fetch last transaction from transaction collection")
+    #print("Trying to fetch last transaction from transaction collection")
+    #fetching last transaction from transactions collection
     last_transaction=transaction_collection.find({}).sort("transaction_id", pymongo.DESCENDING).limit(1)
     if last_transaction.count() != 0 :
         print("transactions are available in transactions collection")
@@ -103,21 +73,15 @@ try:
             #print(type(i))
             #print(i)
             #sys.exit(1)
+
+            #fetching last transactions id
             t = int(i["transaction_id"])
-            print("last transaction's transaction_id is :")
-            print(t)
+            #print("last transaction's transaction_id is :")
+            #print(t)
             #sys.exit(0)
     else:
         print("no transactions available in collection")
-    '''
-    for i in last_transaction:
-        print(i["transaction_id"])
-    '''
-    #j=0
 
-        #j+=1
-    #print(j)
-    #sys.exit(0)
 except Exception as e:
     print(e)
     t=0
@@ -168,30 +132,20 @@ def generate_transaction():
 
 
 
-
-
-
-
-
-
 cnt=0
-check=random.randint(1000,3000)
+check=random.randint(100,300)
 while True:
-
+    print('going inside generate_transaction')
     transaction=generate_transaction()
+    print(transaction)
     producer.send(topic="transactions",value=transaction)
-    time.sleep(5)
-    cnt+=1
-    if cnt==check:
-        data_generation.generate_customer()
-        data_generation.generate_product()
-        check=random.randint(1000,3000)
+    time.sleep(2)
 
-        customers_cursor = customers_collection.find({}, {"customer_id": 1, "_id": 0})  # it will return cursor object
-        customers = [i["customer_id"] for i in customers_cursor]
 
-        products_cursor = products_collection.find({}, {"product_id": 1, "_id": 0})  # it will return cursor object
-        products = [i["product_id"] for i in products_cursor]
+
+        
+        
+
 
 
 
